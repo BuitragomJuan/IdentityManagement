@@ -1,0 +1,17 @@
+### EJERCICIO GESTION DE IDENTIDADES ###
+
+1. SOFTWARE DEVELOPMENT LIFE CYCLE
+
+light Kanban/iterative development - agentic SDLC with claude code
+managing kanban boards not in software like JIRA but inside the repo
+in the CLAUDE.md file because of project size.
+
+- 1.1 Plan
+
+
+
+- 1.2 Design
+- 1.3 Build
+- 1.4 Test
+- 1.5 Deploy
+- 1.6 Maintain
