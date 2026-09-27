@@ -29,6 +29,7 @@ Light Kanban, iterative delivery. Requirement details live in
 - **R07** Uniqueness: `jdoe`, `jdoe1`, `jdoe2`… (It2)
 - **NR02** Case-insensitive uniqueness as a security property — heaviest test coverage (It2)
 - **D01** Decide: empty username after normalization → skip + log? (currently *Proposed*, add to R09) (It2)
+- **D02** Decide + record in intent.md: CSV-injection neutralization method (`'` prefix vs strip) and CSV filename (fixed vs timestamped) (It3)
 - **NR01** Validate external input; skip + log invalid records by id (It3)
 - **NR03** CSV injection neutralization on every cell (It3)
 - **NR04** Secure transport: HTTPS, cert verification, timeout, status + content type (It3)
@@ -55,6 +56,8 @@ _(empty — WIP ≤ 2)_
 _(empty)_
 
 ## Done
+- **A02** Architecture: low-level design, reviewed (final diagram)
+- **A01** Architecture: high-level design, reviewed (v2)
 - **S01** Spec review: original brief + real API data checked (2026-09-24)
 - **S02** requirements.md: R01–R09, NR01–NR06
 - **S03** intent.md: rationale, decisions, open questions; phone format decided

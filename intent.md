@@ -56,6 +56,7 @@ Validated against the real API data on 2026-09-24 (10 records).
 | Collisions | Case-insensitive; counter per base username; first occurrence gets no number, second gets `1`, third `2`. | R07, NR02 | Decided |
 | Bad records | Missing/wrong-typed required field → skip + log reason (by record `id`, not PII). | NR01 | Decided |
 | Phone | Kept as a string, passed through as-is (no normalization). Must be a `str` per NR01 and still goes through the NR03 sanitizer like every cell. Rationale: data mixes extensions (`x56442`), `()`, `.`, `-`; no target format is specified; and treating it as a number would drop leading zeros (`010-692-6593`, `024-648-3804`). | NR01, NR03 | Decided |
+| Zero valid records | No CSV is written, run exits 1. A provisioning step that produces no identities is a failure, not a success with an empty file. | R01, NR06 | Decided |
 | Empty username after normalization | e.g. a name with no Latin letters strips to `""` → treat as invalid, skip + log. Not yet explicit in R09. | R09 | **Proposed** |
 
 ### Implementation notes (not requirements, but must hold)

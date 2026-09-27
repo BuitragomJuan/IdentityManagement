@@ -50,7 +50,7 @@ Then a corporate email should be generated in the following format:
 [firstLetterOfFirstNameInLowercase][LastNameInLowercase]@democompany.com (e.g., John Doe -> jdoe@democompany.com)
 
 **R06 - Requirement: email generation format prefixes,sufixxes and initials**
-Given an external contractor whose name has a prefix (Sr.,Mr.,Dr., Mrs.), suffix (Jr.,Sr.,II–V) or an initial of a name. 
+Given an external contractor whose name has a prefix (Sr.,Mr.,Dr., Mrs.), suffix (Jr.,Sr.,II–V) or an initial of a name.
 When the applications process this kind of names
 Then prefixes, suffixes and single-letter initials are ignored; the first remaining word is the first name and the last remaining word is the last name.
 example:
