@@ -1,0 +1,9 @@
+
+# python virtual environment
+myenv/
+# temporary files in the output directory (especially for temp CSV files)
+output/*.tmp
+# Python bytecode caches
+__pycache__/
+# pytest cache directory
+.pytest_cache/
