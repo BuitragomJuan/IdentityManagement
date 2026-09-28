@@ -41,7 +41,6 @@ Light Kanban, iterative delivery. Requirement details live in
 - **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4)
 
 ## Ready
-- **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
 - **R03** Endpoint connection: fetch `/users` JSON (It1)
 - **R04** Corporate email generation per contractor (It1)
 - **R05** Email format `<initial><lastname>@democompany.com`, lowercase (It1)
@@ -53,7 +52,7 @@ Light Kanban, iterative delivery. Requirement details live in
 _(empty — WIP ≤ 2)_
 
 ## Review
-_(empty)_
+- **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
 
 ## Done
 - **A02** Architecture: low-level design, reviewed (final diagram)
