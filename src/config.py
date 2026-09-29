@@ -9,3 +9,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "output"
 LOG_FILE = OUTPUT_DIR / "DemoCompanyApp.log"  # Log file name stored in output directory
 LOG_LEVEL = "INFO"
+
+# email generation config
+EMAIL_DOMAIN = "democompany.com"  # Domain for generated email addresses

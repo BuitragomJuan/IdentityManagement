@@ -51,4 +51,3 @@ def test_passes_timeout_as_keyword(monkeypatch):
     monkeypatch.setattr(fetch.requests, "get", fake_get)
     fetch_users(timeout=5)
     assert captured["timeout"] == 5
-

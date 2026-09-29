@@ -38,20 +38,21 @@ Light Kanban, iterative delivery. Requirement details live in
 - **T02** README: setup, run, assumptions, security considerations, AI-tool disclosure (It4)
 - **T03** Commit sample run: generated CSV + execution log (deliverables) (It4)
 - **T04** Live demo prep: script, edge cases to show, security talking points (It4)
-- **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4)
+- **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4); ai assist in config.py, fetch.py and test_fetch.py; logging_setup.py and main.py came from ai.
+
 
 ## Ready
-- **R04** Corporate email generation per contractor (It1)
-- **R05** Email format `<initial><lastname>@democompany.com`, lowercase (It1)
 - **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
 - **R01** CSV file generated under `output/` (It1)
 - **R08** Logs: start, runtime, fetched, processed, CSV confirmation, validations (It1)
+- **C01** Create Contractor dataclass + minimal validate_record(It1)
 
 ## In Progress
-_(empty — WIP ≤ 2)_
+_(WIP ≤ 2)_
+
 
 ## Review
-- **R03** Endpoint connection: fetch `/users` JSON — `fetch_users()` raises `FetchError`; logging setup + minimal `main.py` skeleton added; 6 fetch tests (It1)
+
 
 ## Done
 - **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
@@ -60,3 +61,6 @@ _(empty — WIP ≤ 2)_
 - **S01** Spec review: original brief + real API data checked (2026-09-24)
 - **S02** requirements.md: R01–R09, NR01–NR06
 - **S03** intent.md: rationale, decisions, open questions; phone format decided
+- **R03** Endpoint connection: fetch `/users` JSON — `fetch_users()` raises `FetchError`; logging setup + minimal `main.py` skeleton added; 6 fetch tests (It1)
+- **R04** Corporate email generation per contractor (It1)
+- **R05** Email format `<initial><lastname>@democompany.com`, lowercase (It1)

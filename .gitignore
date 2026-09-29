@@ -1,6 +1,7 @@
 
 # python virtual environment
 myenv/
+.env
 
 # temporary files and other output files
 output/*.tmp
