@@ -1,8 +1,11 @@
 
 # python virtual environment
 myenv/
-# temporary files in the output directory (especially for temp CSV files)
+
+# temporary files and other output files
 output/*.tmp
+output/*.log
+output/*.csv
 # Python bytecode caches
 __pycache__/
 # pytest cache directory

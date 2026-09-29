@@ -41,7 +41,6 @@ Light Kanban, iterative delivery. Requirement details live in
 - **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4)
 
 ## Ready
-- **R03** Endpoint connection: fetch `/users` JSON (It1)
 - **R04** Corporate email generation per contractor (It1)
 - **R05** Email format `<initial><lastname>@democompany.com`, lowercase (It1)
 - **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
@@ -52,9 +51,10 @@ Light Kanban, iterative delivery. Requirement details live in
 _(empty — WIP ≤ 2)_
 
 ## Review
-- **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
+- **R03** Endpoint connection: fetch `/users` JSON — `fetch_users()` raises `FetchError`; logging setup + minimal `main.py` skeleton added; 6 fetch tests (It1)
 
 ## Done
+- **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
 - **A02** Architecture: low-level design, reviewed (final diagram)
 - **A01** Architecture: high-level design, reviewed (v2)
 - **S01** Spec review: original brief + real API data checked (2026-09-24)
