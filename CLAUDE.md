@@ -87,7 +87,9 @@ Modular structure — explicitly demonstrates "modularidad" from the spec:
 democompany-onboarding/
 ├── src/
 │   ├── __init__.py
-│   ├── fetch.py            # API call + error handling
+│   ├── config.py           # constants only (URL, timeout, paths) — no side effects
+│   ├── logging_setup.py    # setup_logging(), called once from main
+│   ├── fetch.py            # API call + error handling (raises FetchError)
 │   ├── email_generator.py  # email logic + duplicate handling
 │   ├── csv_writer.py       # CSV generation
 │   └── main.py             # orchestration
