@@ -60,6 +60,7 @@ Validated against the real API data on 2026-09-24 (10 records).
 | Fetch error contract | `fetch_users()` returns a `list` or raises a single `FetchError` (timeout, connection/TLS failure, HTTP error status, non-JSON body, non-list JSON). `main` catches it, logs one readable line and exits 1 — no raw traceback. Error messages carry the exception type, not `str(e)`, so URLs (which could carry tokens in production) stay out of logs. Chosen over returning `None`, which pushes the check onto every caller and fails later with an unrelated `TypeError`. | R03, NR04, NR06 | Decided |
 | Logging setup | Configured once, in the entry point (`logging_setup.setup_logging()`, called by `main`). Each module uses `logging.getLogger(__name__)`. Console + file handlers; file at `output/DemoCompanyApp.log`, UTF-8, overwritten per run (`mode="w"`) so the committed log is one clean run. Production: append + rotation + retention. | R08, NR05 | Decided |
 | Paths | All paths anchored to the project root (`Path(__file__).resolve()`), never the current working directory — output always lands in the fixed `output/` directory. | R01 | Decided |
+| Validated record model | `validation.validate_record(raw) -> Contractor` is the trust boundary: raw API dicts never go past it. Validation and construction happen in one function ("parse, don't validate"), so the only way to obtain a `Contractor` is through validation. Built from an allowlist of the 6 fields the CSV needs (`company.name` and `address.city` flattened); every other field is dropped (data minimization). `Contractor` is a frozen dataclass. Checks use `if` + `isinstance`, not `try/except`: a wrong type doesn't always raise, and bad input is expected, not exceptional. `id` must be `int` and not `bool`. Failures raise `InvalidRecordError(record_id, reason)`; reasons name the field, never its value. It1 = presence + type checks; empty strings, lengths, control chars and email format are deferred to NR01 (It3). Production: a schema library (pydantic) instead of hand-written checks. | NR01, NR05 | Decided |
 | Empty username after normalization | e.g. a name with no Latin letters strips to `""` → treat as invalid, skip + log. Not yet explicit in R09. | R09 | **Proposed** |
 
 ### Implementation notes (not requirements, but must hold)
@@ -70,6 +71,12 @@ Validated against the real API data on 2026-09-24 (10 records).
 - **Known limitation:** Unicode NFKD handles `ñ`, `ú`, `é` but not `ł`, `ø`,
   `ß`, `æ` (`Łukasz` → `ukasz`). Documented, not fixed — production would use a
   dedicated transliteration library.
+- **Known limitation:** validation reasons use the bare key name, so a failure
+  on `company.name` reads `missing required key: name`, identical to a failure
+  on the contractor's own `name`. Accepted for It1: the record id is still
+  logged and the record is correctly skipped; only the log message is
+  ambiguous. Fix if needed: pass a dotted path (`company.name`) to `_require`
+  for the message.
 
 ## Security intent
 Target role is IT Security Junior Consultant — this section is evaluated, not decorative.

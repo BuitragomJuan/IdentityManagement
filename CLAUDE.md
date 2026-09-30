@@ -90,6 +90,8 @@ democompany-onboarding/
 │   ├── config.py           # constants only (URL, timeout, paths) — no side effects
 │   ├── logging_setup.py    # setup_logging(), called once from main
 │   ├── fetch.py            # API call + error handling (raises FetchError)
+│   ├── models.py           # Contractor (frozen dataclass); Row later
+│   ├── validation.py       # validate_record(raw) -> Contractor; trust boundary
 │   ├── email_generator.py  # email logic + duplicate handling
 │   ├── csv_writer.py       # CSV generation
 │   └── main.py             # orchestration
