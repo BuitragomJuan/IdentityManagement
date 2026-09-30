@@ -42,17 +42,14 @@ Light Kanban, iterative delivery. Requirement details live in
 
 
 ## Ready
-- **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
-- **R01** CSV file generated under `output/` (It1)
 - **R08** Logs: start, runtime, fetched, processed, CSV confirmation, validations (It1)
-- **C01** Create Contractor dataclass + minimal validate_record(It1)
 
 ## In Progress
 _(WIP ≤ 2)_
-
+- **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
+- **R01** CSV file generated under `output/` (It1)
 
 ## Review
-
 
 ## Done
 - **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
@@ -64,3 +61,4 @@ _(WIP ≤ 2)_
 - **R03** Endpoint connection: fetch `/users` JSON — `fetch_users()` raises `FetchError`; logging setup + minimal `main.py` skeleton added; 6 fetch tests (It1)
 - **R04** Corporate email generation per contractor (It1)
 - **R05** Email format `<initial><lastname>@democompany.com`, lowercase (It1)
+- **C01** `Contractor` dataclass + `validate_record()` — presence + type checks; empty strings, lengths, control chars, email format deferred to NR01 (It3) (It1)
