@@ -24,16 +24,11 @@ Light Kanban, iterative delivery. Requirement details live in
 ---
 
 ## Backlog
-- **D02** Decide + record in intent.md: CSV-injection neutralization method (`'` prefix vs strip) and CSV filename (fixed vs timestamped) (It3)
-- **NR01** Validate external input; skip + log invalid records by id (It3)
-- **NR03** CSV injection neutralization on every cell (It3)
-- **NR04** Secure transport: HTTPS, cert verification, timeout, status + content type (It3)
-- **NR05** No PII in logs: counts, ids, reasons only (It3)
-- **NR06** Fail safely: no partial CSV on error (It3)
 - **T02** README: setup, run, assumptions, security considerations, AI-tool disclosure (It4)
 - **T03** Commit sample run: generated CSV + execution log (deliverables) (It4)
 - **T04** Live demo prep: script, edge cases to show, security talking points (It4)
-- **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4); ai assist in config.py, fetch.py and test_fetch.py; logging_setup.py and main.py came from ai. main.py was written by the ai assist. main.py (r08 version) and test_main.py were written by the ai agent, log line was removed from fetch.py.
+- **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4); ai assist in config.py, fetch.py and test_fetch.py; logging_setup.py and main.py came from ai. main.py was written by the ai assist. main.py (r08 version) and test_main.py were written by the ai agent, log line was removed from fetch.py. R07 written by AI, NR02 by the engineer. It3 (D02, NR01, NR03–NR06) written entirely by AI under delegation (2026-10-01); D02 decisions to be confirmed by the engineer. AI bugs caught: `_is_initial` treated CJK characters as initials (R06, caught by D01 test); a test opened and truncated the real output/ log, which exposed a leaked FileHandler in `setup_logging` (NR05).
+- **CI01** GitHub Actions: run pytest on every PR — would have blocked the stale-tests merge after PR #10 (It4)
 
 
 ## Ready
@@ -44,6 +39,12 @@ _(WIP ≤ 2)_
 
 
 ## Review
+- **D02** CSV-injection method = `'` prefix; CSV filename = fixed, replaced atomically — decided by Claude under delegation, **engineer to confirm** (It3)
+- **NR01** Validate external input: trimmed, non-empty, ≤ 200 chars, no control/invisible chars, email shape, id ≥ 1, duplicate ids skipped (It3)
+- **NR03** CSV injection: `sanitize_cell` on every cell via `_to_cells` (It3)
+- **NR04** Secure transport: HTTPS only, explicit cert verification, no redirects, status 200, JSON content type, sanitized header logging (It3)
+- **NR05** No PII in logs: audited; urllib3/requests capped at WARNING; whole-pipeline leak test (It3)
+- **NR06** Fail safely: atomic CSV write (temp + fsync + os.replace); unexpected errors → one line, exit 1 (It3)
 
 
 ## Done
