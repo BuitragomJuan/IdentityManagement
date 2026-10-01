@@ -159,3 +159,103 @@ def test_d01_empty_after_normalization_raises(name):
 
 def test_to_email():
     assert email_generator.to_email("jdoe") == "jdoe@democompany.com"
+
+
+# --- R07 EmailRegistry: sequential suffix per base -----------------------------
+
+def test_r07_first_gets_no_number_then_1_then_2():
+    registry = email_generator.EmailRegistry()
+    assert registry.assign("jdoe") == ("jdoe", 0)
+    assert registry.assign("jdoe") == ("jdoe1", 1)
+    assert registry.assign("jdoe") == ("jdoe2", 2)
+
+
+def test_r07_acceptance_example_johana_doe():
+    # spec: a second "Johana Doe" after "John Doe" -> jdoe1@democompany.com
+    registry = email_generator.EmailRegistry()
+    first = registry.assign(email_generator.build_username("John Doe").username)
+    second = registry.assign(email_generator.build_username("Johana Doe").username)
+    assert email_generator.to_email(first.username) == "jdoe@democompany.com"
+    assert email_generator.to_email(second.username) == "jdoe1@democompany.com"
+
+
+def test_r07_counters_are_per_base():
+    registry = email_generator.EmailRegistry()
+    registry.assign("jdoe")
+    registry.assign("jdoe")
+    assert registry.assign("asmith") == ("asmith", 0)
+    assert registry.assign("jdoe") == ("jdoe2", 2)
+
+
+def test_r07_new_registry_starts_empty():
+    # uniqueness is per run: a fresh registry has no memory of a previous one
+    email_generator.EmailRegistry().assign("jdoe")
+    assert email_generator.EmailRegistry().assign("jdoe") == ("jdoe", 0)
+
+
+def test_r07_empty_base_rejected():
+    with pytest.raises(ValueError):
+        email_generator.EmailRegistry().assign("")
+
+
+def test_nr02_case_insensitive():
+    registry = email_generator.EmailRegistry()
+    assert registry.assign("jdoe") == ("jdoe", 0)
+    assert registry.assign("JDOE") == ("jdoe1", 1)
+    assert registry.assign("Jdoe") == ("jdoe2", 2)
+
+
+def test_nr02_different_bases_can_collide():
+    registry = email_generator.EmailRegistry()
+    assert registry.assign("jdoe") == ("jdoe", 0)
+    assert registry.assign("jdoe1") == ("jdoe1", 0)  # different base, no collision yet
+    assert registry.assign("jdoe") == ("jdoe2", 2)    # jdoe1 is taken by the other base
+
+
+def test_cross_base_collision_order_a():
+    registry = email_generator.EmailRegistry()
+    assert registry.assign("jdoe") == ("jdoe", 0)
+    assert registry.assign("jdoe") == ("jdoe1", 1) 
+
+
+def test_cross_base_collision_order_b():
+    registry = email_generator.EmailRegistry()
+    assert registry.assign("jdoe1") == ("jdoe1", 0)
+    assert registry.assign("jdoe") == ("jdoe", 0)
+    assert registry.assign("jdoe") == ("jdoe2", 2)
+
+
+def test_bulk_uniqueness():
+    registry = email_generator.EmailRegistry()
+    names = ["John Doe"]*50
+    registry.assign("jdoe1")
+    registry.assign("jdoe5")
+    registry.assign("jdoe30")
+    usernames = [email_generator.build_username(name).username for name in names]
+    emails = [registry.assign(username).username for username in usernames]
+    results = [registry.assign(b).username for b in ["jdoe1", "jdoe5", "jdoe30"]]
+    results += [registry.assign(u).username for u in usernames]
+    assert len(set(results)) == len(results)
+
+
+def test_determinism():
+    registry1 = email_generator.EmailRegistry()
+    registry2 = email_generator.EmailRegistry()
+    registry = email_generator.EmailRegistry()
+    names = ["John Doe"]*5
+    registry.assign("jdoe1")
+    registry.assign("jdoe5")
+    registry.assign("jdoe30")
+    usernames = [email_generator.build_username(name).username for name in names]
+    emails1 = [registry1.assign(username).username for username in usernames]
+    emails2 = [registry2.assign(username).username for username in usernames]
+    assert emails1 == emails2
+
+
+def test_end_to_end_normalization():
+    registry = email_generator.EmailRegistry()
+    names = ["JANE DOE", "Jane Doe", "Jäne Döe", "JANE DOE"]
+    usernames = [email_generator.build_username(name).username for name in names]
+    emails = [registry.assign(username).username for username in usernames]
+    assert emails == ["jdoe", "jdoe1", "jdoe2", "jdoe3"]
+

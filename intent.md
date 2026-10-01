@@ -79,6 +79,13 @@ Validated against the real API data on 2026-09-24 (10 records).
 - **Adjustment logging:** `parse_name` reports *categories* ignored
   (`prefix`, `suffix`, `initial`), never the tokens; `main` logs
   `record <id>: name adjusted (<categories> ignored)`.
+- **Collision handling (R07):** `EmailRegistry.assign(base)` keeps a per-base
+  counter *and* checks every candidate against all usernames issued in the
+  run. The counter alone is not enough: base `jdoe` + suffix `1` and base
+  `jdoe1` (a name like `John Doe1` — digits are allowed by R09) are the same
+  string. One registry per run (`main`); logged as
+  `record <id>: email collision resolved, suffix <n> assigned` — never the
+  username, which is derived from the name.
 - **Homoglyphs:** NFKD folds compatibility forms (fullwidth `Ｊ` → `J`), but a
   Cyrillic `а` has no decomposition and is stripped — a lookalike name yields
   a *different* username (`jne`), never the Latin original's.

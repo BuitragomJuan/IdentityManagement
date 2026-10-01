@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.config import CSV_FILE, PROJECT_ROOT
 from src.csv_writer import write_csv
-from src.email_generator import build_username, to_email
+from src.email_generator import EmailRegistry, build_username, to_email
 from src.fetch import FetchError, fetch_users
 from src.logging_setup import setup_logging
 from src.models import Row
@@ -62,6 +62,7 @@ def _run(csv_path: Path) -> int:
 def _build_rows(users: list) -> list[Row]:
     """Turn raw records into CSV rows; skip and log (id + reason only) any that fail."""
     rows = []
+    registry = EmailRegistry()  # one per run: uniqueness is per run (intent.md non-goals)
     for raw in users:
         try:
             contractor = validate_record(raw)
@@ -78,7 +79,12 @@ def _build_rows(users: list) -> list[Row]:
             # categories only ("prefix", "suffix", "initial") — never the name or its tokens
             logger.info("record %s: name adjusted (%s ignored)", contractor.id, ", ".join(result.ignored))
 
-        corporate_email = to_email(result.username)
+        assignment = registry.assign(result.username)
+        if assignment.suffix:
+            # id + suffix only — the username is derived from the name (NR05)
+            logger.info("record %s: email collision resolved, suffix %d assigned", contractor.id, assignment.suffix)
+
+        corporate_email = to_email(assignment.username)
         rows.append(Row(contractor=contractor, corporate_email=corporate_email))
     return rows
 

@@ -73,6 +73,39 @@ def build_username(full_name: str) -> UsernameResult:
     return UsernameResult(f"{first[0]}{last}", parsed.ignored)
 
 
+class Assignment(NamedTuple):
+    username: str
+    suffix: int  # 0 = no collision; n = the n-th duplicate of this base got suffix n
+
+
+class EmailRegistry:
+    """R07: hand out unique usernames for one run — jdoe, jdoe1, jdoe2, ...
+
+    Per-run only (non-goal: no check against already-issued accounts).
+    Checks every candidate against *all* usernames handed out so far, not just
+    the per-base counter: a different base can produce the same string
+    (base "jdoe" + suffix 1 == base "jdoe1"), and two contractors must never
+    share an identity.
+    """
+
+    def __init__(self) -> None:
+        self._taken: set[str] = set()
+        self._next_suffix: dict[str, int] = {}
+
+    def assign(self, base: str) -> Assignment:
+        base = base.casefold()
+        if not base:
+            raise ValueError("cannot assign an empty username")
+        suffix = self._next_suffix.get(base, 0)
+        candidate = base if suffix == 0 else f"{base}{suffix}"
+        while candidate in self._taken:
+            suffix += 1
+            candidate = f"{base}{suffix}"
+        self._next_suffix[base] = suffix + 1
+        self._taken.add(candidate)
+        return Assignment(candidate, suffix)
+
+
 def to_email(username: str) -> str:
     """Convert a username to an email address."""
     return f"{username}@{EMAIL_DOMAIN}"
