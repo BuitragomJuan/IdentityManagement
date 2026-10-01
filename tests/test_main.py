@@ -153,3 +153,76 @@ def test_collision_resolved_and_logged_by_id_only(tmp_path, fake_fetch, caplog):
     assert "record 3: email collision resolved, suffix 2 assigned" in caplog.text
     assert "record 1: email collision" not in caplog.text
     assert "jdoe" not in caplog.text
+
+
+def test_nr01_duplicate_id_skipped(tmp_path, fake_fetch, caplog):
+    fake_fetch([_raw(1, "Jane Doe"), _raw(1, "John Smith"), _raw(2, "Ann Lee")])
+
+    assert main_module._run(tmp_path / "out.csv") == 0
+    assert "Skipped record 1: duplicate id" in caplog.text
+    assert "Records processed successfully: 2 of 3 (skipped: 1)" in caplog.text
+
+
+def test_nr06_unexpected_error_one_clean_line_no_values(monkeypatch, fake_fetch, tmp_path, caplog):
+    monkeypatch.setattr(main_module, "setup_logging", lambda: None)
+    monkeypatch.setattr(main_module, "CSV_FILE", tmp_path / "out.csv")
+    fake_fetch([_raw(1, "Jane Doe")])
+
+    def bug(raw):
+        raise RuntimeError(f"unexpected value {raw['name']}")  # a message that carries PII
+    monkeypatch.setattr(main_module, "validate_record", bug)
+
+    assert main_module.main() == 1
+    assert "Unexpected error (RuntimeError); run aborted" in caplog.text
+    assert "Jane" not in caplog.text
+    assert "Traceback" not in caplog.text
+    assert "(exit code 1)" in caplog.text
+    assert not (tmp_path / "out.csv").exists()
+
+
+# --- NR05: no personal data anywhere in the log ----------------------------------
+
+def test_nr05_whole_run_logs_no_personal_data(tmp_path, fake_fetch, caplog):
+    # Exercise every log path that touches a record: valid, prefix/suffix/initial
+    # adjustment, collision, invalid field, D01 empty username, single-word name,
+    # duplicate id. Then check that no value from any record reached the log.
+    records = [
+        _raw(1, "Jane Doe"),
+        _raw(2, "Mrs. Jill A. Doe III"),        # adjusted + collision (jdoe1)
+        _raw(3, "Jóse Núñez"),
+        {**_raw(4, "Pedro Paramo"), "email": "not-an-email"},
+        _raw(5, "李 王"),                         # D01
+        _raw(6, "Cher"),                         # fewer than two words
+        _raw(1, "Duplicate Person"),             # duplicate id
+    ]
+    fake_fetch(records)
+    caplog.set_level(logging.DEBUG)
+
+    assert main_module._run(tmp_path / "out.csv") == 0
+
+    forbidden = {"jdoe", "jdoe1", "jnunez", "democompany"}
+    for r in records:
+        forbidden |= {r["name"], r["email"], r["phone"], r["company"]["name"], r["address"]["city"]}
+        forbidden |= set(r["name"].split())
+    forbidden -= {"A.", "III", "Mrs."}  # tokens that are also our own category words are checked below
+    for value in forbidden:
+        assert value not in caplog.text, f"personal data leaked into the log: {value!r}"
+    assert "record 2: name adjusted (prefix, suffix, initial ignored)" in caplog.text
+
+
+def test_nr05_library_request_logs_capped_at_warning(tmp_path, monkeypatch):
+    from src import logging_setup
+
+    # never let a test open (and truncate) the real output/ log
+    monkeypatch.setattr(logging_setup, "LOG_FILE", tmp_path / "test.log")
+    root = logging.getLogger()
+    before = list(root.handlers)
+    try:
+        logging_setup.setup_logging()
+        for name in ("urllib3", "requests"):
+            assert logging.getLogger(name).getEffectiveLevel() >= logging.WARNING
+    finally:
+        for h in list(root.handlers):
+            if h not in before:
+                root.removeHandler(h)
+                h.close()

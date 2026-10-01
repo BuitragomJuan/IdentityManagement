@@ -129,3 +129,95 @@ def test_starts_with_bom_for_excel(tmp_path, rows):
     output_file = tmp_path / "out.csv"
     csv_writer.write_csv(rows, output_file)
     assert output_file.read_bytes().startswith(b"\xef\xbb\xbf")
+
+
+# --- NR03: CSV / formula injection ---------------------------------------------
+
+@pytest.mark.parametrize("payload", [
+    "=1+1",
+    "=HYPERLINK(\"http://evil.example\",\"click\")",
+    "=cmd|'/c calc'!A1",
+    "+1+1",
+    "-2+3",
+    "@SUM(A1:A2)",
+    "\t=1+1",
+    "\r=1+1",
+])
+def test_nr03_sanitize_prefixes_formula_triggers(payload):
+    assert csv_writer.sanitize_cell(payload) == "'" + payload
+
+
+@pytest.mark.parametrize("safe", ["Jane Doe", "1-770-736-8031 x56442", "(254)954-1289", "Romaguera-Crona", "", " =not first char"])
+def test_nr03_safe_values_unchanged(safe):
+    assert csv_writer.sanitize_cell(safe) == safe
+
+
+@pytest.mark.parametrize("field, column", [
+    ("name", 0), ("phone", 1), ("email", 2), ("company", 3), ("city", 4),
+])
+def test_nr03_every_contractor_column_is_sanitized(tmp_path, field, column):
+    output_file = tmp_path / "out.csv"
+    csv_writer.write_csv([_row(**{field: "=1+1"})], output_file)
+    assert _read_back(output_file)[1][column] == "'=1+1"
+
+
+def test_nr03_corporate_email_column_is_sanitized_too(tmp_path):
+    # generated values go through the same path — defense in depth, nothing bypasses _to_cells
+    output_file = tmp_path / "out.csv"
+    row = Row(contractor=_row().contractor, corporate_email="@evil")
+    csv_writer.write_csv([row], output_file)
+    assert _read_back(output_file)[1][5] == "'@evil"
+
+
+def test_nr03_leading_plus_phone_is_visibly_prefixed(tmp_path):
+    # documented trade-off (intent.md D02): legitimate leading "+" gets a visible quote
+    output_file = tmp_path / "out.csv"
+    csv_writer.write_csv([_row(phone="+57 300 123 4567")], output_file)
+    assert _read_back(output_file)[1][1] == "'+57 300 123 4567"
+
+
+# --- NR06: atomic write, no partial output ---------------------------------------
+
+def _broken_rows():
+    # second row explodes inside _to_cells, after the header and first row were written
+    return [_row(), Row(contractor=None, corporate_email="x@democompany.com")]
+
+
+def test_nr06_no_temp_file_left_after_success(tmp_path, rows):
+    csv_writer.write_csv(rows, tmp_path / "out.csv")
+    assert list(tmp_path.glob("*.tmp")) == []
+    assert [p.name for p in tmp_path.iterdir()] == ["out.csv"]
+
+
+def test_nr06_failure_mid_write_leaves_no_file(tmp_path):
+    output_file = tmp_path / "out.csv"
+    with pytest.raises(AttributeError):
+        csv_writer.write_csv(_broken_rows(), output_file)
+    assert not output_file.exists()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_nr06_failure_mid_write_keeps_previous_csv_intact(tmp_path, rows):
+    output_file = tmp_path / "out.csv"
+    csv_writer.write_csv(rows, output_file)
+    before = output_file.read_bytes()
+
+    with pytest.raises(AttributeError):
+        csv_writer.write_csv(_broken_rows(), output_file)
+    assert output_file.read_bytes() == before
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_nr06_failed_replace_cleans_up_and_keeps_previous(tmp_path, rows, monkeypatch):
+    # e.g. Windows: target locked by Excel -> os.replace raises PermissionError
+    output_file = tmp_path / "out.csv"
+    csv_writer.write_csv(rows, output_file)
+    before = output_file.read_bytes()
+
+    def locked(src, dst):
+        raise PermissionError(13, "Permission denied")
+    monkeypatch.setattr(csv_writer.os, "replace", locked)
+    with pytest.raises(PermissionError):
+        csv_writer.write_csv(rows[:1], output_file)
+    assert output_file.read_bytes() == before
+    assert list(tmp_path.glob("*.tmp")) == []

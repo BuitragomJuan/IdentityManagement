@@ -3,10 +3,10 @@ import sys
 import time
 from pathlib import Path
 
-from src.config import CSV_FILE, PROJECT_ROOT
+from src.config import API_TIMEOUT, CSV_FILE, PROJECT_ROOT
 from src.csv_writer import write_csv
 from src.email_generator import EmailRegistry, build_username, to_email
-from src.fetch import FetchError, fetch_users
+from src.fetch import FetchError, fetch_users, source_host
 from src.logging_setup import setup_logging
 from src.models import Row
 from src.validation import InvalidRecordError, validate_record
@@ -19,17 +19,24 @@ def main() -> int:
     setup_logging()
     started = time.perf_counter()
     logger.info("Process started")
-    exit_code = 1  # stays 1 if _run raises unexpectedly
+    exit_code = 1
     try:
         exit_code = _run(CSV_FILE)
-        return exit_code
+    except Exception as e:
+        # NR06: a bug must not surface as a raw traceback, and its message may
+        # contain record values — log the type only. Details only at DEBUG
+        # (LOG_LEVEL=DEBUG is a deliberate operator opt-in, never for shared logs).
+        logger.error("Unexpected error (%s); run aborted", type(e).__name__)
+        logger.debug("Unexpected error details", exc_info=True)
     finally:
         elapsed = time.perf_counter() - started
         logger.info("Process finished in %.2fs (exit code %d)", elapsed, exit_code)
+    return exit_code
 
 
 def _run(csv_path: Path) -> int:
     """Fetch, validate, generate emails and write the CSV. Returns the exit code."""
+    logger.info("Source: %s (HTTPS, timeout %ss)", source_host(), API_TIMEOUT)
     try:
         users = fetch_users()
     except FetchError as e:
@@ -63,12 +70,18 @@ def _build_rows(users: list) -> list[Row]:
     """Turn raw records into CSV rows; skip and log (id + reason only) any that fail."""
     rows = []
     registry = EmailRegistry()  # one per run: uniqueness is per run (intent.md non-goals)
+    seen_ids: set[int] = set()
     for raw in users:
         try:
             contractor = validate_record(raw)
         except InvalidRecordError as e:
             logger.warning("Skipped %s", e)  # "record 3: missing required key: phone"
             continue
+        if contractor.id in seen_ids:
+            # NR01: ids are how every log line refers to a record — a repeat makes the audit trail ambiguous
+            logger.warning("Skipped record %s: duplicate id", contractor.id)
+            continue
+        seen_ids.add(contractor.id)
 
         try:
             result = build_username(contractor.name)
