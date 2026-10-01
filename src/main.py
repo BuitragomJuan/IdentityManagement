@@ -3,10 +3,10 @@ import sys
 import time
 from pathlib import Path
 
-from src.config import CSV_FILE, PROJECT_ROOT
+from src.config import API_TIMEOUT, CSV_FILE, PROJECT_ROOT
 from src.csv_writer import write_csv
 from src.email_generator import EmailRegistry, build_username, to_email
-from src.fetch import FetchError, fetch_users
+from src.fetch import FetchError, fetch_users, source_host
 from src.logging_setup import setup_logging
 from src.models import Row
 from src.validation import InvalidRecordError, validate_record
@@ -30,6 +30,7 @@ def main() -> int:
 
 def _run(csv_path: Path) -> int:
     """Fetch, validate, generate emails and write the CSV. Returns the exit code."""
+    logger.info("Source: %s (HTTPS, timeout %ss)", source_host(), API_TIMEOUT)
     try:
         users = fetch_users()
     except FetchError as e:
