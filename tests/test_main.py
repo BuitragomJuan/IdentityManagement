@@ -64,6 +64,25 @@ def test_skip_logs_contain_no_pii(tmp_path, fake_fetch, caplog):
     assert "555-555-5555" not in caplog.text
 
 
+def test_name_adjustment_logged_by_id_only(tmp_path, fake_fetch, caplog):
+    # R06 log: category + record id, never the name or the ignored token
+    fake_fetch([_raw(6, "Mrs. Dennis Schulist")])
+
+    assert main_module._run(tmp_path / "out.csv") == 0
+    assert "record 6: name adjusted (prefix ignored)" in caplog.text
+    assert "Dennis" not in caplog.text
+    assert "Mrs" not in caplog.text
+
+
+def test_empty_username_after_normalization_is_skipped(tmp_path, fake_fetch, caplog):
+    # D01
+    fake_fetch([_raw(1, "Jane Doe"), _raw(2, "李 王")])
+
+    assert main_module._run(tmp_path / "out.csv") == 0
+    assert "Skipped record 2: name has no usable characters after normalization" in caplog.text
+    assert "李" not in caplog.text
+
+
 def test_fetch_failure_exits_1_without_csv(tmp_path, monkeypatch, caplog):
     def failing_fetch():
         raise FetchError("request timed out after 10s")
