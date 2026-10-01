@@ -24,9 +24,9 @@ Light Kanban, iterative delivery. Requirement details live in
 ---
 
 ## Backlog
-- **R06** Name parsing: prefixes, suffixes, initials; < 2 words → skip + log (It2)
+- **R06** Name parsing: prefixes, suffixes, initials; < 2 words → skip + log; log each adjustment by record id only (`record 6: prefix ignored`, never the name) (It2)
 - **R09** Username character set: transliterate → lowercase → strip `[^a-z0-9]` (It2)
-- **R07** Uniqueness: `jdoe`, `jdoe1`, `jdoe2`… (It2)
+- **R07** Uniqueness: `jdoe`, `jdoe1`, `jdoe2`…; log each resolved collision by record id + suffix (`record 7: email collision resolved, suffix 1 assigned`, never the username) (It2)
 - **NR02** Case-insensitive uniqueness as a security property — heaviest test coverage (It2)
 - **D01** Decide: empty username after normalization → skip + log? (currently *Proposed*, add to R09) (It2)
 - **D02** Decide + record in intent.md: CSV-injection neutralization method (`'` prefix vs strip) and CSV filename (fixed vs timestamped) (It3)
@@ -38,19 +38,17 @@ Light Kanban, iterative delivery. Requirement details live in
 - **T02** README: setup, run, assumptions, security considerations, AI-tool disclosure (It4)
 - **T03** Commit sample run: generated CSV + execution log (deliverables) (It4)
 - **T04** Live demo prep: script, edge cases to show, security talking points (It4)
-- **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4); ai assist in config.py, fetch.py and test_fetch.py; logging_setup.py and main.py came from ai.
+- **T05** AI-usage log: where suggestions were wrong/corrected (ongoing, closes in It4); ai assist in config.py, fetch.py and test_fetch.py; logging_setup.py and main.py came from ai. main.py was written by the ai assist. main.py (r08 version) and test_main.py were written by the ai agent, log line was removed from fetch.py.
 
 
 ## Ready
-- **R08** Logs: start, runtime, fetched, processed, CSV confirmation, validations (It1)
+
 
 ## In Progress
 _(WIP ≤ 2)_
-
+- **R08** Logs: start, runtime, fetched, processed, CSV confirmation, validations (It1)
 
 ## Review
-- **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
-- **R01** CSV file generated under `output/` (It1)
 
 ## Done
 - **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
@@ -63,3 +61,5 @@ _(WIP ≤ 2)_
 - **R04** Corporate email generation per contractor (It1)
 - **R05** Email format `<initial><lastname>@democompany.com`, lowercase (It1)
 - **C01** `Contractor` dataclass + `validate_record()` — presence + type checks; empty strings, lengths, control chars, email format deferred to NR01 (It3) (It1)
+- **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
+- **R01** CSV file generated under `output/` (It1)

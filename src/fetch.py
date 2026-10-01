@@ -1,10 +1,6 @@
-import logging
-
 import requests
 
 from src.config import API_TIMEOUT, API_URL
-
-logger = logging.getLogger(__name__)
 
 
 class FetchError(Exception):
@@ -32,5 +28,4 @@ def fetch_users(url: str = API_URL, timeout: float = API_TIMEOUT) -> list[dict]:
     if not isinstance(data, list):
         raise FetchError(f"expected a JSON list, got {type(data).__name__}")
 
-    logger.info("Fetched %d records from endpoint", len(data))
     return data

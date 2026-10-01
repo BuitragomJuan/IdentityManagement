@@ -109,9 +109,13 @@ that the evaluation includes **the ability to validate and correct externally
 generated output, with the final logic being the candidate's own**.
 
 Working rule for this project:
-- Claude (Eng. Turing) reviews, challenges, and explains; the engineer writes
-  or deliberately rewrites the core logic (email generation, validation,
-  sanitization) and can justify every line.
+- Up to R01/R02 (It1): Claude (Eng. Turing) reviewed, challenged, and
+  explained; the engineer wrote the core logic (email generation, validation,
+  CSV writing). Exceptions are recorded in T05.
+- From R08 onward (decided 2026-09-30): the engineer specifies and requests
+  code; Claude writes it; the engineer reviews, questions and approves every
+  change before commit, and must be able to justify every line in the demo.
+  Design decisions remain the engineer's.
 - Keep a short log of places where suggested code was wrong or was corrected —
   it is direct evidence for the demo.
 - Disclose tool usage openly in the README.
