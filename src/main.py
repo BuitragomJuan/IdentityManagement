@@ -63,12 +63,18 @@ def _build_rows(users: list) -> list[Row]:
     """Turn raw records into CSV rows; skip and log (id + reason only) any that fail."""
     rows = []
     registry = EmailRegistry()  # one per run: uniqueness is per run (intent.md non-goals)
+    seen_ids: set[int] = set()
     for raw in users:
         try:
             contractor = validate_record(raw)
         except InvalidRecordError as e:
             logger.warning("Skipped %s", e)  # "record 3: missing required key: phone"
             continue
+        if contractor.id in seen_ids:
+            # NR01: ids are how every log line refers to a record — a repeat makes the audit trail ambiguous
+            logger.warning("Skipped record %s: duplicate id", contractor.id)
+            continue
+        seen_ids.add(contractor.id)
 
         try:
             result = build_username(contractor.name)

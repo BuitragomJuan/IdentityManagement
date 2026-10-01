@@ -153,3 +153,11 @@ def test_collision_resolved_and_logged_by_id_only(tmp_path, fake_fetch, caplog):
     assert "record 3: email collision resolved, suffix 2 assigned" in caplog.text
     assert "record 1: email collision" not in caplog.text
     assert "jdoe" not in caplog.text
+
+
+def test_nr01_duplicate_id_skipped(tmp_path, fake_fetch, caplog):
+    fake_fetch([_raw(1, "Jane Doe"), _raw(1, "John Smith"), _raw(2, "Ann Lee")])
+
+    assert main_module._run(tmp_path / "out.csv") == 0
+    assert "Skipped record 1: duplicate id" in caplog.text
+    assert "Records processed successfully: 2 of 3 (skipped: 1)" in caplog.text
