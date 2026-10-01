@@ -1,4 +1,6 @@
 import csv
+import os
+import tempfile
 from pathlib import Path
 
 from src.models import Row
@@ -35,9 +37,28 @@ def _to_cells(row: Row) -> list[str]:
 
 
 def write_csv(rows: list[Row], path: Path) -> None:
+    """Write the CSV atomically (NR06): all rows or nothing.
+
+    Writes to a temp file in the same directory, flushes it to disk, then
+    os.replace()s it over the target — an atomic rename on the same filesystem
+    (Windows included). On any failure the temp file is removed and an existing
+    CSV from a previous run is left untouched, so a half-written file can never
+    be picked up and used to provision accounts.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f)
-        writer.writerow(CSV_HEADERS)
-        for row in rows:
-            writer.writerow(_to_cells(row))
+    # mkstemp creates the file with owner-only permissions (0600 on POSIX):
+    # the CSV holds personal data. Same directory => same filesystem => atomic replace.
+    fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.stem}-", suffix=".tmp")
+    tmp_path = Path(tmp_name)
+    try:
+        with open(fd, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(CSV_HEADERS)
+            for row in rows:
+                writer.writerow(_to_cells(row))
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:  # also on Ctrl+C: never leave the temp file behind
+        tmp_path.unlink(missing_ok=True)
+        raise

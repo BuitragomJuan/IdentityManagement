@@ -19,13 +19,19 @@ def main() -> int:
     setup_logging()
     started = time.perf_counter()
     logger.info("Process started")
-    exit_code = 1  # stays 1 if _run raises unexpectedly
+    exit_code = 1
     try:
         exit_code = _run(CSV_FILE)
-        return exit_code
+    except Exception as e:
+        # NR06: a bug must not surface as a raw traceback, and its message may
+        # contain record values — log the type only. Details only at DEBUG
+        # (LOG_LEVEL=DEBUG is a deliberate operator opt-in, never for shared logs).
+        logger.error("Unexpected error (%s); run aborted", type(e).__name__)
+        logger.debug("Unexpected error details", exc_info=True)
     finally:
         elapsed = time.perf_counter() - started
         logger.info("Process finished in %.2fs (exit code %d)", elapsed, exit_code)
+    return exit_code
 
 
 def _run(csv_path: Path) -> int:

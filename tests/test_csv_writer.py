@@ -174,3 +174,50 @@ def test_nr03_leading_plus_phone_is_visibly_prefixed(tmp_path):
     output_file = tmp_path / "out.csv"
     csv_writer.write_csv([_row(phone="+57 300 123 4567")], output_file)
     assert _read_back(output_file)[1][1] == "'+57 300 123 4567"
+
+
+# --- NR06: atomic write, no partial output ---------------------------------------
+
+def _broken_rows():
+    # second row explodes inside _to_cells, after the header and first row were written
+    return [_row(), Row(contractor=None, corporate_email="x@democompany.com")]
+
+
+def test_nr06_no_temp_file_left_after_success(tmp_path, rows):
+    csv_writer.write_csv(rows, tmp_path / "out.csv")
+    assert list(tmp_path.glob("*.tmp")) == []
+    assert [p.name for p in tmp_path.iterdir()] == ["out.csv"]
+
+
+def test_nr06_failure_mid_write_leaves_no_file(tmp_path):
+    output_file = tmp_path / "out.csv"
+    with pytest.raises(AttributeError):
+        csv_writer.write_csv(_broken_rows(), output_file)
+    assert not output_file.exists()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_nr06_failure_mid_write_keeps_previous_csv_intact(tmp_path, rows):
+    output_file = tmp_path / "out.csv"
+    csv_writer.write_csv(rows, output_file)
+    before = output_file.read_bytes()
+
+    with pytest.raises(AttributeError):
+        csv_writer.write_csv(_broken_rows(), output_file)
+    assert output_file.read_bytes() == before
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_nr06_failed_replace_cleans_up_and_keeps_previous(tmp_path, rows, monkeypatch):
+    # e.g. Windows: target locked by Excel -> os.replace raises PermissionError
+    output_file = tmp_path / "out.csv"
+    csv_writer.write_csv(rows, output_file)
+    before = output_file.read_bytes()
+
+    def locked(src, dst):
+        raise PermissionError(13, "Permission denied")
+    monkeypatch.setattr(csv_writer.os, "replace", locked)
+    with pytest.raises(PermissionError):
+        csv_writer.write_csv(rows[:1], output_file)
+    assert output_file.read_bytes() == before
+    assert list(tmp_path.glob("*.tmp")) == []

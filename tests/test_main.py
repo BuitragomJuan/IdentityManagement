@@ -161,3 +161,20 @@ def test_nr01_duplicate_id_skipped(tmp_path, fake_fetch, caplog):
     assert main_module._run(tmp_path / "out.csv") == 0
     assert "Skipped record 1: duplicate id" in caplog.text
     assert "Records processed successfully: 2 of 3 (skipped: 1)" in caplog.text
+
+
+def test_nr06_unexpected_error_one_clean_line_no_values(monkeypatch, fake_fetch, tmp_path, caplog):
+    monkeypatch.setattr(main_module, "setup_logging", lambda: None)
+    monkeypatch.setattr(main_module, "CSV_FILE", tmp_path / "out.csv")
+    fake_fetch([_raw(1, "Jane Doe")])
+
+    def bug(raw):
+        raise RuntimeError(f"unexpected value {raw['name']}")  # a message that carries PII
+    monkeypatch.setattr(main_module, "validate_record", bug)
+
+    assert main_module.main() == 1
+    assert "Unexpected error (RuntimeError); run aborted" in caplog.text
+    assert "Jane" not in caplog.text
+    assert "Traceback" not in caplog.text
+    assert "(exit code 1)" in caplog.text
+    assert not (tmp_path / "out.csv").exists()
