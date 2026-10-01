@@ -46,10 +46,11 @@ Light Kanban, iterative delivery. Requirement details live in
 
 ## In Progress
 _(WIP ≤ 2)_
-- **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
-- **R01** CSV file generated under `output/` (It1)
+
 
 ## Review
+- **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
+- **R01** CSV file generated under `output/` (It1)
 
 ## Done
 - **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
