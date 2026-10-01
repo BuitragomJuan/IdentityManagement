@@ -70,11 +70,15 @@ def _build_rows(users: list) -> list[Row]:
             continue
 
         try:
-            corporate_email = to_email(build_username(contractor.name))
+            result = build_username(contractor.name)
         except ValueError as e:
             logger.warning("Skipped record %s: %s", contractor.id, e)  # id + reason, never the name
             continue
+        if result.ignored:
+            # categories only ("prefix", "suffix", "initial") — never the name or its tokens
+            logger.info("record %s: name adjusted (%s ignored)", contractor.id, ", ".join(result.ignored))
 
+        corporate_email = to_email(result.username)
         rows.append(Row(contractor=contractor, corporate_email=corporate_email))
     return rows
 

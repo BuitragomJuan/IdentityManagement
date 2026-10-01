@@ -49,7 +49,7 @@ Validated against the real API data on 2026-09-24 (10 records).
 
 | Topic | Decision | Req | Status |
 |---|---|---|---|
-| Name parsing | Ignore prefixes (`Sr.`, `Mr.`, `Dr.`, `Mrs.`), suffixes (`Jr.`, `Sr.`, `II`–`V`) and single-letter initials. First remaining word = first name, last remaining word = last name. | R06 | Decided |
+| Name parsing | Ignore prefixes (`Sr.`, `Mr.`, `Mrs.`, `Ms.`, `Miss`, `Dr.`, `Prof.` — `Ms`/`Miss`/`Prof` added 2026-09-30), suffixes (`Jr.`, `Sr.`, `II`–`V`) and single-letter initials. First remaining word = first name, last remaining word = last name. | R06 | Decided |
 | Why above | Naive first/last word breaks on real data: `Mrs. Dennis Schulist` → `mschulist`, `Nicholas Runolfsdottir V` → `nv`. | R06 | Evidence |
 | Too few words | Fewer than two words remain after stripping (`Dr. Smith`, `John V`) → skip + log. An identity built from half a name is a guess. | R06 | Decided |
 | Character set | Username limited to `[a-z0-9]`. Accented Latin characters are transliterated (`Núñez` → `nunez`); separators are stripped (`O'Brien` → `obrien`); characters without a decomposition are stripped. | R09 | Decided |
@@ -62,13 +62,26 @@ Validated against the real API data on 2026-09-24 (10 records).
 | Paths | All paths anchored to the project root (`Path(__file__).resolve()`), never the current working directory — output always lands in the fixed `output/` directory. | R01 | Decided |
 | Validated record model | `validation.validate_record(raw) -> Contractor` is the trust boundary: raw API dicts never go past it. Validation and construction happen in one function ("parse, don't validate"), so the only way to obtain a `Contractor` is through validation. Built from an allowlist of the 6 fields the CSV needs (`company.name` and `address.city` flattened); every other field is dropped (data minimization). `Contractor` is a frozen dataclass. Checks use `if` + `isinstance`, not `try/except`: a wrong type doesn't always raise, and bad input is expected, not exceptional. `id` must be `int` and not `bool`. Failures raise `InvalidRecordError(record_id, reason)`; reasons name the field, never its value. It1 = presence + type checks; empty strings, lengths, control chars and email format are deferred to NR01 (It3). Production: a schema library (pydantic) instead of hand-written checks. | NR01, NR05 | Decided |
 | CSV output | `csv_writer.write_csv(rows, path)` writes `Row(contractor, corporate_email)` objects. Columns in spec order, Spanish headers (the CSV is the business deliverable for a Spanish-language brief; code and logs stay in English): `Nombre, Telefono, Correo electronico original, Empresa, Ciudad, Correo electronico DemoCompany`. Headers defined once (`CSV_HEADERS`); `_to_cells(row)` is the single function every cell passes through — the hook point for NR03 `sanitize_cell` in It3. Written with `csv.writer` (never string joins), so commas, quotes and line breaks inside values stay in one cell. Opened with `newline=""` (otherwise Windows writes `\r\r\n` → blank lines in Excel) and `encoding="utf-8-sig"`: the BOM makes Excel detect UTF-8 so `Núñez` renders correctly; cost is 3 bytes some non-Excel tools don't expect. Fixed filename `output/external_contractors.csv` for It1 (D02 revisits fixed vs timestamped); path comes only from `config`, never user input. The writer writes what it is given — the "zero valid records → no CSV, exit 1" policy lives in `main`. Direct write for now; temp file + rename is NR06 (It3). | R01, R02, NR03, NR06 | Decided |
-| Empty username after normalization | e.g. a name with no Latin letters strips to `""` → treat as invalid, skip + log. Not yet explicit in R09. | R09 | **Proposed** |
+| Empty username after normalization | If the first or last name normalizes to `""` (e.g. `李 王`, or a token made only of punctuation) → treat as invalid, skip + log by record id. Same principle as "too few words": an identity built from a guess is not an identity. Also prevents an `IndexError` when taking the initial of an empty string. Decided 2026-09-30 (D01). | R09 | Decided |
 
 ### Implementation notes (not requirements, but must hold)
 - **Normalization order:** transliterate → lowercase → strip outside `[a-z0-9]`.
   Stripping first would turn `Núñez` into `nez`.
 - **Prefix/suffix matching:** case-insensitive, trailing dot optional
   (`Mr` = `Mr.` = `MR.`).
+- **Position-aware:** only *leading* prefixes and *trailing* suffixes are
+  ignored. `Sr` is in both lists (Señor / Senior); its position decides.
+  A prefix-like word in the middle of a name is kept.
+- **Initials = a single Latin letter** (`A`, `A.`, `É.`). A one-character
+  CJK name part (`李`) is a real name, not an initial; it normalizes to `""`
+  and is skipped by D01. Consequence of the rule: `J. R. Tolkien` → only one
+  word remains → skipped.
+- **Adjustment logging:** `parse_name` reports *categories* ignored
+  (`prefix`, `suffix`, `initial`), never the tokens; `main` logs
+  `record <id>: name adjusted (<categories> ignored)`.
+- **Homoglyphs:** NFKD folds compatibility forms (fullwidth `Ｊ` → `J`), but a
+  Cyrillic `а` has no decomposition and is stripped — a lookalike name yields
+  a *different* username (`jne`), never the Latin original's.
 - **Known limitation:** Unicode NFKD handles `ñ`, `ú`, `é` but not `ł`, `ø`,
   `ß`, `æ` (`Łukasz` → `ukasz`). Documented, not fixed — production would use a
   dedicated transliteration library.

@@ -24,11 +24,8 @@ Light Kanban, iterative delivery. Requirement details live in
 ---
 
 ## Backlog
-- **R06** Name parsing: prefixes, suffixes, initials; < 2 words → skip + log; log each adjustment by record id only (`record 6: prefix ignored`, never the name) (It2)
-- **R09** Username character set: transliterate → lowercase → strip `[^a-z0-9]` (It2)
 - **R07** Uniqueness: `jdoe`, `jdoe1`, `jdoe2`…; log each resolved collision by record id + suffix (`record 7: email collision resolved, suffix 1 assigned`, never the username) (It2)
 - **NR02** Case-insensitive uniqueness as a security property — heaviest test coverage (It2)
-- **D01** Decide: empty username after normalization → skip + log? (currently *Proposed*, add to R09) (It2)
 - **D02** Decide + record in intent.md: CSV-injection neutralization method (`'` prefix vs strip) and CSV filename (fixed vs timestamped) (It3)
 - **NR01** Validate external input; skip + log invalid records by id (It3)
 - **NR03** CSV injection neutralization on every cell (It3)
@@ -44,11 +41,14 @@ Light Kanban, iterative delivery. Requirement details live in
 ## Ready
 
 
+
 ## In Progress
 _(WIP ≤ 2)_
-- **R08** Logs: start, runtime, fetched, processed, CSV confirmation, validations (It1)
+
 
 ## Review
+- **R06** Name parsing: prefixes, suffixes, initials; < 2 words → skip + log; log each adjustment by record id only (`record 6: prefix ignored`, never the name) (It2)
+- **R09** Username character set: transliterate → lowercase → strip `[^a-z0-9]` (It2)
 
 ## Done
 - **T01** Scaffold: `src/`, `tests/`, `output/`, `.gitignore`, pinned `requirements.txt` for pip (It1)
@@ -63,3 +63,5 @@ _(WIP ≤ 2)_
 - **C01** `Contractor` dataclass + `validate_record()` — presence + type checks; empty strings, lengths, control chars, email format deferred to NR01 (It3) (It1)
 - **R02** CSV row per successfully processed contractor, 6 fields; phone as-is string (It1)
 - **R01** CSV file generated under `output/` (It1)
+- **R08** Logs: start, runtime, fetched, processed, CSV confirmation, validations (It1)
+- **D01** Decide: empty username after normalization → skip + log? (currently *Proposed*, add to R09) (It2)
