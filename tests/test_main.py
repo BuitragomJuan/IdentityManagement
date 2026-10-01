@@ -137,3 +137,19 @@ def test_runtime_logged_on_failure_too(monkeypatch, caplog):
 
     assert main_module.main() == 1
     assert "(exit code 1)" in caplog.text
+
+
+def test_collision_resolved_and_logged_by_id_only(tmp_path, fake_fetch, caplog):
+    # R07: second and third "J... Doe" get jdoe1 / jdoe2; log carries id + suffix, never the username
+    fake_fetch([_raw(1, "John Doe"), _raw(2, "Johana Doe"), _raw(3, "Jill Doe")])
+    csv_path = tmp_path / "out.csv"
+
+    assert main_module._run(csv_path) == 0
+    content = csv_path.read_text(encoding="utf-8-sig")
+    assert "jdoe@democompany.com" in content
+    assert "jdoe1@democompany.com" in content
+    assert "jdoe2@democompany.com" in content
+    assert "record 2: email collision resolved, suffix 1 assigned" in caplog.text
+    assert "record 3: email collision resolved, suffix 2 assigned" in caplog.text
+    assert "record 1: email collision" not in caplog.text
+    assert "jdoe" not in caplog.text
